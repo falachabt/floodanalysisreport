@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyseur de Données de Crue</title>
+    <style>
+        :root {
+            --normal-color: #4caf50;
+            --warning-color: #ffeb3b;
+            --danger-color: #ff9800;
+            --extreme-color: #f44336;
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --bg-color: #f5f5f5;
+            --card-bg: white;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            color: var(--secondary-color);
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-container {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, button {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .results {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .normal {
+            color: var(--normal-color);
+        }
+
+        .warning {
+            color: var(--warning-color);
+        }
+
+        .danger {
+            color: var(--danger-color);
+        }
+
+        .extreme {
+            color: var(--extreme-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+
+        .threshold-container {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .threshold-group {
+            margin-bottom: 15px;
+        }
+
+        .threshold-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .threshold-card {
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .threshold-card.normal {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid var(--normal-color);
+        }
+
+        .threshold-card.warning {
+            background-color: rgba(255, 235, 59, 0.2);
+            border: 1px solid var(--warning-color);
+        }
+
+        .threshold-card.danger {
+            background-color: rgba(255, 152, 0, 0.2);
+            border: 1px solid var(--danger-color);
+        }
+
+        .threshold-card.extreme {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid var(--extreme-color);
+        }
+
+        .threshold-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .arduino-code {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        pre {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .copy-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            float: right;
+        }
+
+        .copy-btn:hover {
+            background-color: #1c2833;
+        }
+
+        #loading {
+            text-align: center;
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #777;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .statistics {
+                grid-template-columns: 1fr;
+            }
+            
+            .threshold-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Analyseur de Données de Crue</h1>
+        <p>Calculer les seuils de catégorisation pour la surveillance des inondations</p>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <h2>Paramètres de requête</h2>
+            <div class="input-group">
+                <label for="latitude">Latitude</label>
+                <input type="number" id="latitude" step="0.0001" value="50.7184" required>
+            </div>
+            <div class="input-group">
+                <label for="longitude">Longitude</label>
+                <input type="number" id="longitude" step="0.0001" value="2.286" required>
+            </div>
+            <div class="input-group">
+                <label for="start-date">Date de début</label>
+                <input type="date" id="start-date" value="2015-01-01" required>
+            </div>
+            <div class="input-group">
+                <label for="end-date">Date de fin</label>
+                <input type="date" id="end-date" required>
+            </div>
+            <button id="fetch-data">Récupérer et analyser les données</button>
+        </div>
+
+        <div id="loading">
+            <div class="spinner"></div> Chargement et analyse des données...
+        </div>
+
+        <div id="results" class="results">
+            <h2>Résultats de l'analyse</h2>
+            
+            <div class="statistics">
+                <div class="stat-card">
+                    <h3>Débit minimum</h3>
+                    <div id="min-discharge" class="stat-value normal">-</div>
+                    <div>m³/s</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Débit maximum</h3>
+                    <div id="max-discharge" class="stat-value extreme">-</div>
+                    <div>m³/s</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Débit médian</h3>
+                    <div id="median-discharge" class="stat-value normal">-</div>
+                    <div>m³/s</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Débit moyen</h3>
+                    <div id="avg-discharge" class="stat-value normal">-</div>
+                    <div>m³/s</div>
+                </div>
+            </div>
+
+            <div class="threshold-container">
+                <h2>Seuils de catégorisation recommandés</h2>
+                <p>Basés sur l'analyse statistique des données historiques:</p>
+                
+                <div class="threshold-grid">
+                    <div class="threshold-card normal">
+                        <h3>Normal</h3>
+                        <div id="normal-threshold" class="threshold-value">0 - <span id="warning-min">-</span></div>
+                        <div>m³/s</div>
+                        <p>Jusqu'au 75ème percentile</p>
+                    </div>
+                    <div class="threshold-card warning">
+                        <h3>Avertissement</h3>
+                        <div id="warning-threshold" class="threshold-value"><span id="warning-min-2">-</span> - <span id="danger-min">-</span></div>
+                        <div>m³/s</div>
+                        <p>75ème au 95ème percentile</p>
+                    </div>
+                    <div class="threshold-card danger">
+                        <h3>Danger</h3>
+                        <div id="danger-threshold" class="threshold-value"><span id="danger-min-2">-</span> - <span id="extreme-min">-</span></div>
+                        <div>m³/s</div>
+                        <p>95ème au 99ème percentile</p>
+                    </div>
+                    <div class="threshold-card extreme">
+                        <h3>Extrême</h3>
+                        <div id="extreme-threshold" class="threshold-value">≥ <span id="extreme-min-2">-</span></div>
+                        <div>m³/s</div>
+                        <p>Au-dessus du 99ème percentile</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2>Visualisation des données</h2>
+                <canvas id="discharge-chart"></canvas>
+            </div>
+
+            <div class="arduino-code">
+                <h2>Code ESP32 avec les seuils calculés</h2>
+                <button id="copy-code" class="copy-btn">Copier le code</button>
+                <pre><code id="arduino-code-snippet">// Le code sera généré après l'analyse</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 Analyseur de Données de Crue - Développé pour la surveillance des inondations</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Définir la date d'aujourd'hui comme date de fin par défaut
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('end-date').value = today;
+
+            let dischargeChart = null;
+
+            // Événement click sur le bouton de récupération des données
+            document.getElementById('fetch-data').addEventListener('click', async function() {
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+
+                if (!latitude || !longitude || !startDate || !endDate) {
+                    alert('Veuillez remplir tous les champs requis.');
+                    return;
+                }
+
+                // Afficher le chargement
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('results').style.display = 'none';
+
+                try {
+                    // Construire l'URL de l'API
+                    const apiUrl = `https://flood-api.open-meteo.com/v1/flood?latitude=${latitude}&longitude=${longitude}&daily=river_discharge&start_date=${startDate}&end_date=${endDate}`;
+                    
+                    // Récupérer les données
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    // Analyser les données
+                    analyzeData(data);
+                    
+                } catch (error) {
+                    console.error('Erreur lors de la récupération des données:', error);
+                    alert(`Erreur: ${error.message}`);
+                    document.getElementById('loading').style.display = 'none';
+                }
+            });
+
+            // Fonction pour analyser les données
+            function analyzeData(data) {
+                // Extraire les données de débit
+                const discharges = data.daily.river_discharge;
+                const dates = data.daily.time;
+
+                // Calculer les statistiques
+                const sortedDischarges = [...discharges].sort((a, b) => a - b);
+                const min = sortedDischarges[0];
+                const max = sortedDischarges[sortedDischarges.length - 1];
+                const median = sortedDischarges[Math.floor(sortedDischarges.length / 2)];
+                const avg = discharges.reduce((a, b) => a + b, 0) / discharges.length;
+                
+                // Calculer les percentiles pour les seuils
+                const q75 = sortedDischarges[Math.floor(sortedDischarges.length * 0.75)];
+                const q95 = sortedDischarges[Math.floor(sortedDischarges.length * 0.95)];
+                const q99 = sortedDischarges[Math.floor(sortedDischarges.length * 0.99)];
+
+                // Mettre à jour les statistiques
+                document.getElementById('min-discharge').textContent = min.toFixed(2);
+                document.getElementById('max-discharge').textContent = max.toFixed(2);
+                document.getElementById('median-discharge').textContent = median.toFixed(2);
+                document.getElementById('avg-discharge').textContent = avg.toFixed(2);
+
+                // Mettre à jour les seuils
+                document.getElementById('warning-min').textContent = q75.toFixed(2);
+                document.getElementById('warning-min-2').textContent = q75.toFixed(2);
+                document.getElementById('danger-min').textContent = q95.toFixed(2);
+                document.getElementById('danger-min-2').textContent = q95.toFixed(2);
+                document.getElementById('extreme-min').textContent = q99.toFixed(2);
+                document.getElementById('extreme-min-2').textContent = q99.toFixed(2);
+
+                // Générer le code Arduino
+                generateArduinoCode(q75, q95, q99);
+
+                // Créer le graphique
+                createChart(dates, discharges, q75, q95, q99);
+
+                // Masquer le chargement et afficher les résultats
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+            }
+
+            // Fonction pour créer le graphique
+            function createChart(dates, discharges, warningThreshold, dangerThreshold, extremeThreshold) {
+                const ctx = document.getElementById('discharge-chart').getContext('2d');
+                
+                // Détruire le graphique existant s'il y en a un
+                if (dischargeChart) {
+                    dischargeChart.destroy();
+                }
+
+                // Configurer les données pour Chart.js
+                const chartData = {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Débit (m³/s)',
+                            data: discharges,
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Seuil d\'avertissement',
+                            data: Array(dates.length).fill(warningThreshold),
+                            borderColor: 'rgba(255, 235, 59, 0.8)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Seuil de danger',
+                            data: Array(dates.length).fill(dangerThreshold),
+                            borderColor: 'rgba(255, 152, 0, 0.8)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Seuil extrême',
+                            data: Array(dates.length).fill(extremeThreshold),
+                            borderColor: 'rgba(244, 67, 54, 0.8)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                };
+
+                // Options du graphique
+                const chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            },
+                            ticks: {
+                                maxTicksLimit: 20,
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Débit (m³/s)'
+                            },
+                            min: 0
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                };
+
+                // Créer le graphique
+                dischargeChart = new Chart(ctx, {
+                    type: 'line',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+
+            // Fonction pour générer le code Arduino
+            function generateArduinoCode(warningThreshold, dangerThreshold, extremeThreshold) {
+                const arduinoCode = `#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+
+// WiFi credentials
+const char* ssid = "VOTRE_SSID";
+const char* password = "VOTRE_MOT_DE_PASSE";
+
+// API URL with parameters
+const char* apiUrl = "https://flood-api.open-meteo.com/v1/flood?latitude=${document.getElementById('latitude').value}&longitude=${document.getElementById('longitude').value}&daily=river_discharge&start_date=2025-04-02&end_date=2025-06-30";
+
+// Seuils de catégorisation basés sur l'analyse statistique
+const float NORMAL_THRESHOLD = 0.0;      // Tout débit est au moins normal
+const float WARNING_THRESHOLD = ${warningThreshold.toFixed(2)};    // 75ème percentile
+const float DANGER_THRESHOLD = ${dangerThreshold.toFixed(2)};     // 95ème percentile
+const float EXTREME_THRESHOLD = ${extremeThreshold.toFixed(2)};    // 99ème percentile
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting to WiFi...");
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  
+  Serial.println("");
+  Serial.print("Connected to WiFi network with IP Address: ");
+  Serial.println(WiFi.localIP());
+  
+  // Make API call
+  getFloodData();
+}
+
+void loop() {
+  // Récupérer les données de débit toutes les heures
+  static unsigned long lastTime = 0;
+  unsigned long timerDelay = 3600000; // 1 heure en millisecondes
+  
+  if ((millis() - lastTime) > timerDelay) {
+    if (WiFi.status() == WL_CONNECTED) {
+      getFloodData();
+      lastTime = millis();
+    } else {
+      Serial.println("WiFi Disconnected");
+      // Tentative de reconnexion
+      WiFi.begin(ssid, password);
+    }
+  }
+  
+  delay(30000); // Vérification toutes les 30 secondes
+}
+
+String categorizeDischarge(float discharge) {
+  if (discharge >= EXTREME_THRESHOLD) {
+    return "EXTRÊME";
+  } else if (discharge >= DANGER_THRESHOLD) {
+    return "DANGER";
+  } else if (discharge >= WARNING_THRESHOLD) {
+    return "AVERTISSEMENT";
+  } else {
+    return "NORMAL";
+  }
+}
+
+void getFloodData() {
+  // Check WiFi connection status
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    
+    Serial.println("Making HTTP request...");
+    
+    // Your Domain name with URL path or IP address with path
+    http.begin(apiUrl);
+    
+    // Send HTTP GET request
+    int httpResponseCode = http.GET();
+    
+    if (httpResponseCode > 0) {
+      Serial.print("HTTP Response code: ");
+      Serial.println(httpResponseCode);
+      
+      String payload = http.getString();
+      
+      // Allocate JsonDocument
+      // If the response is large, you may need to increase the capacity
+      DynamicJsonDocument doc(16384);
+      
+      // Deserialize the JSON document
+      DeserializationError error = deserializeJson(doc, payload);
+      
+      // Test if parsing succeeds
+      if (error) {
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+        return;
+      }
+      
+      // Extract values
+      float latitude = doc["latitude"];
+      float longitude = doc["longitude"];
+      
+      Serial.print("Latitude: ");
+      Serial.println(latitude, 6);
+      Serial.print("Longitude: ");
+      Serial.println(longitude, 6);
+      
+      // Extract and print the daily data with categorization
+      Serial.println("Date, River Discharge (m³/s), Category");
+      
+      JsonArray times = doc["daily"]["time"];
+      JsonArray discharges = doc["daily"]["river_discharge"];
+      
+      // Pour stocker les moyennes et maximums
+      float totalDischarge = 0;
+      float maxDischarge = 0;
+      String maxDischargeDate;
+      
+      for (size_t i = 0; i < times.size(); i++) {
+        const char* time = times[i];
+        float discharge = discharges[i];
+        String category = categorizeDischarge(discharge);
+        
+        Serial.print(time);
+        Serial.print(", ");
+        Serial.print(discharge);
+        Serial.print(", ");
+        Serial.println(category);
+        
+        // Calculer statistiques
+        totalDischarge += discharge;
+        if (discharge > maxDischarge) {
+          maxDischarge = discharge;
+          maxDischargeDate = time;
+        }
+      }
+      
+      // Si des données sont disponibles, calculer et afficher les statistiques
+      if (times.size() > 0) {
+        float avgDischarge = totalDischarge / times.size();
+        String avgCategory = categorizeDischarge(avgDischarge);
+        String maxCategory = categorizeDischarge(maxDischarge);
+        
+        Serial.println("\\n--- RÉSUMÉ ---");
+        Serial.print("Débit moyen: ");
+        Serial.print(avgDischarge);
+        Serial.print(" m³/s (");
+        Serial.print(avgCategory);
+        Serial.println(")");
+        
+        Serial.print("Débit maximum: ");
+        Serial.print(maxDischarge);
+        Serial.print(" m³/s le ");
+        Serial.print(maxDischargeDate);
+        Serial.print(" (");
+        Serial.print(maxCategory);
+        Serial.println(")");
+      }
+    }
+    else {
+      Serial.print("Error code: ");
+      Serial.println(httpResponseCode);
+    }
+    
+    // Free resources
+    http.end();
+  }
+  else {
+    Serial.println("WiFi Disconnected");
+  }
+}`;
+
+                document.getElementById('arduino-code-snippet').textContent = arduinoCode;
+            }
+
+            // Événement pour copier le code Arduino
+            document.getElementById('copy-code').addEventListener('click', function() {
+                const codeElement = document.getElementById('arduino-code-snippet');
+                const textArea = document.createElement('textarea');
+                textArea.value = codeElement.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Changer temporairement le texte du bouton
+                const button = this;
+                const originalText = button.textContent;
+                button.textContent = 'Copié !';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
